@@ -8,27 +8,27 @@ namespace Ex04.Menus.Events
     public class MainMenu
     {
         public event MenuHierarchyUpdateDelegate HierarchyChanged;
-
+        private int m_MenuLevel;
         private string m_MenuTitle;
         private readonly List<MenuItem> r_MenuItemsList = new List<MenuItem>();
-        private int m_MenuLevel;
-        private int m_Index = 0;
-        
-        public List<MenuItem> MenuItemList 
-        { 
-            get { return r_MenuItemsList; }
-        }
 
-        public int Index
+        internal List<MenuItem> MenuItemList
         {
-            get { return m_Index; }
-            set { m_Index = value; }
+            get { return r_MenuItemsList; }
         }
 
         public string MenuTitle
         {
             get { return m_MenuTitle; }
-            set { m_MenuTitle = value; }
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    throw new ArgumentException("Title cannot be null or empty string");
+                }
+
+                m_MenuTitle = value;
+            }
         }
 
         public int MenuLevel
@@ -59,19 +59,17 @@ namespace Ex04.Menus.Events
             HierarchyChanged += i_SubMenu.OnLevelChanged;
             i_SubMenu.MenuItemList[0].Clicked -= i_SubMenu.Show;
             i_SubMenu.MenuItemList[0].Clicked += Show;
-
         }
 
         private void OnLevelChanged(int i_NewLevel)
         {
             MenuLevel = i_NewLevel;
-
             HierarchyChanged?.Invoke(i_NewLevel + 1);
         }
 
         public void AddMenuItem(string i_Title, ClickInvoker i_MethodToInvokeWhenClicked)
         {
-            MenuItemList.Add(new MenuItem(i_Title, Index++, i_MethodToInvokeWhenClicked));
+            MenuItemList.Add(new MenuItem(i_Title, MenuItemList.Count, i_MethodToInvokeWhenClicked));
         }
 
         private void exitMenuItem_Clicked()
@@ -83,49 +81,74 @@ namespace Ex04.Menus.Events
         {
             bool isRunning = true;
 
+            printMenu();
 
-            while (isRunning)
+            while(isRunning)
             {
-                printMenu();
                 getInput(out int itemChosen);
                 Console.Clear();
                 MenuItemList[itemChosen].OnClicked();
 
-                if (itemChosen == 0)
+                if(MenuItemList[itemChosen].Title == "Back") // itemChosen == 0
                 {
                     isRunning = false;
+                } 
+                else
+                {
+                    printPrompt("Press any key to continue");
+                    Console.ReadKey();
+                    printMenu();
                 }
-                //else
-                //{
-                //    printMenu();
-                //}
             }
         }
 
         private void printMenu()
         {
             Console.Clear();
-            printPrompt(MenuTitle);
+            string menuTitle = string.Format("** {0} **", MenuTitle);
+            string titleUnderLines = new string('-', menuTitle.Length);
+            printPrompt(menuTitle);
+            printPrompt(titleUnderLines);
 
-            foreach (MenuItem item in MenuItemList)
+            foreach(MenuItem item in MenuItemList)
             {
-                item.Show();
+                if(item.Index != 0)
+                {
+                    item.Show();
+                }
             }
+
+            MenuItemList[0].Show();
         }
 
         private void getInput(out int o_UserInput)
         {
             int numOfItems = MenuItemList.Count - 1;
-            string exitText = MenuLevel == 1 ? "exit" : "go back";
-            string promptMessage = string.Format("Please enter your choice (1 - {0} or 0 to {1}):", numOfItems, exitText);
 
-            printPrompt(promptMessage);
+            displayInputInstructions();
 
-            while (!int.TryParse(Console.ReadLine(), out o_UserInput) || o_UserInput < 0 || o_UserInput >= (numOfItems + 1))
+            while(!int.TryParse(Console.ReadLine(), out o_UserInput) || o_UserInput < 0 || o_UserInput >= (numOfItems + 1))
             {
                 printPrompt("Wrong input - Try again!");
-                printPrompt(promptMessage);
             }
+        }
+
+        private void displayInputInstructions()
+        {
+            int numOfItems = MenuItemList.Count - 1;
+            string exitText = MenuLevel == 1 ? "exit" : "go back";
+            string promptMessage = string.Empty;
+
+            if(numOfItems == 0)
+            {
+                promptMessage = string.Format("Please enter 0 to {0}:", exitText);
+                // printPrompt(">>");
+            } else
+            {
+                promptMessage = string.Format("Please enter your choice (1 - {0} or 0 to {1}):", numOfItems, exitText);
+            }
+
+            printPrompt(promptMessage);
         }
 
         private void printPrompt(string i_Input)

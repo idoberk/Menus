@@ -4,8 +4,8 @@
     {
         public static void Main()
         {
-            Events.MainMenu menu = EventMenus.CreateEventMainMenu();
-
+            //Events.MainMenu menu = EventMenus.CreateEventMainMenu();
+            InterfaceMenus.MainMenu menu = InterfaceMenus.CreateEventMainMenu();
             menu.Show();
         }
     }

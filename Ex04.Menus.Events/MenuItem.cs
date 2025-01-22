@@ -6,16 +6,23 @@ namespace Ex04.Menus.Events
 
     public class MenuItem
     {
+        private bool m_IsMainMenu = false;
+        private readonly int r_Index;
+        private string m_Title;
         public event ClickInvoker Clicked;
 
-        private string m_Title;
-        private readonly int r_Index;
-        private bool m_IsMainMenu = false;
-
         public string Title 
-        { 
+        {
             get { return m_Title; }
-            set { m_Title = value; }
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    throw new ArgumentException("Title cannot be null or empty string");
+                }
+
+                m_Title = value;
+            }
         }
 
         public int Index
